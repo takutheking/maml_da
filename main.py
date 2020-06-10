@@ -15,6 +15,7 @@ def main():
     meta_lr=0.001
     inner_lr=0.004
     data=Data_Generator(train_task_data_num,train_task_num)
+
     model=Predictor()
     optimizer=optim.SGD(model.parameters(),lr=meta_lr)
     criterion=nn.MSELoss()
@@ -51,6 +52,7 @@ def main():
             function+=(i+1.0+pre_num)/(i+2.0+pre_num)*function
             vars_temp=[]
             for ele in model.state_dict().keys():
+                [[]]
                 vars_temp.append(model.state_dict()[ele])
             difference=0
             difference2=0

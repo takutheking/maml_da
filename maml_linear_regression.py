@@ -48,10 +48,11 @@ class maml_linear_regression:
         z=np.dot(X.T,y)
         temp=np.eye(self.theta_dim)-2*alpha*k
         if grad_fixed:
-            steps=step+1
+            #exact version of gradient
+            accum=np.dot(np.dot(temp,temp),np.dot(k,theta)-z.reshape(-1,1))
         else:
-            steps=random.randrange(1,11)
-        accum=np.dot(pow(temp,steps),np.dot(k,theta)-z.reshape(-1,1))
+            #approximate version of gradient
+            accum=np.dot(temp,np.dot(k,theta)-z.reshape(-1,1))
         return (-2*beta*accum).reshape(-1,1)
 
 
@@ -70,20 +71,22 @@ class maml_linear_regression:
                 accum=accum+np.array(self.meta_gradient(X,y,theta,alpha=alpha,beta=beta,grad_fixed=grad_fixed,step=step,mini=mini,batch_size=batch_size)).reshape(-1,1)
         return accum
 
-    def fit(self,random_theta=False,theta_range=50,epochs=100000,early_stopping=100,eta=0.001):
+    def fit(self,random_theta=False,theta_range=50,epochs=100000,early_stopping=100,eta=0.001,datas=False,outputs=False):
         theta=np.random.randint(-theta_range,theta_range,self.theta_dim).astype(np.float64).reshape(-1,1) #初期値
         i=0 #early stoppingからの回数
-        X_val,y_val,theta_v=self.datas[len(self.datas)-2]
-        X_test,y_test,theta_test=self.datas[len(self.datas)-1]
+        if not datas or not outputs:
+            X_val,y_val,theta_v=self.datas[len(self.datas)-2]
+            X_test,y_test,theta_test=self.datas[len(self.datas)-1]
+        else:
+            X_val,
         theta_val=theta
         self.process=[]
         self.test_process=[]
         self.real_process=[]
         best=1000000000
-        for _ in range(epochs):
+        for  in range(epochs):
 
             theta+=self.meta_batch_update(theta)
-
 
             theta_val=theta-eta*self.gradient(X_val,y_val,theta)
             ans=np.sum((theta_val-theta_v.reshape(-1,1))**2)
@@ -98,20 +101,3 @@ class maml_linear_regression:
                 i=0
                 best=ans
         return theta-eta*self.gradient(X_test,y_test,theta)
-
-
-
-maml=maml_linear_regression(10,False) #タスク数、データ数(False数の場合10-1000のデータをランダムに選択)
-#X,y,theta=maml.datas[0]
-#print(maml.meta_gradient(X,y,theta))
-print(maml.fit())
-print(maml.real_theta)
-
-
-x=np.arange(len(maml.process))
-plt.plot(x,maml.test_process,label='test set')
-plt.plot(x,maml.process,label='val set')
-plt.plot(x,maml.real_process)
-plt.legend(loc='upper right')
-plt.ylim(0,1000)
-plt.show()

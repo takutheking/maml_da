@@ -1,0 +1,4 @@
+#all the files and folders that are unnecessary
+.git
+__pycache__
+
