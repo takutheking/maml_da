@@ -29,7 +29,7 @@ class Data_Generator(object):
         inputs = np.zeros([self.num_task, self.num_samples_per_task*2, self.dim_input])
         for func in range(self.num_task):
             inputs[func] = np.random.uniform(self.input_range[0], self.input_range[1], [self.num_samples_per_task*2, self.dim_input])
-            outputs[func] = amp[func] * np.sin(init_inputs[func]-phase[func])
+            outputs[func] = amp[func] * np.sin(inputs[func]-phase[func])
         return inputs, outputs, amp, phase
 
     def generate_linear(self,real_theta):
@@ -37,7 +37,8 @@ class Data_Generator(object):
 
         self.dim_input=self.theta_dim
         self.dim_output=1
-        self.sigma_theta=s*np.eye(self.theta_dim)
+        amplitude=1
+        self.sigma_theta=amplitude*np.eye(self.theta_dim)
         self.real_theta=real_theta
         theta=[]
         inputs=[]
