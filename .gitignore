@@ -1,4 +1,4 @@
 #all the files and folders that are unnecessary
 .git
-__pycache__
-
+__pycache_/_
+DS_Store
