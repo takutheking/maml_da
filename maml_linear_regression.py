@@ -4,39 +4,18 @@ import matplotlib.pyplot as plt
 
 
 class maml_linear_regression:
-    def __init__(self,task_num,data_num=10,theta_dim=10,random_state=0,theta_range=50,cov=False,epsilon=10,cov_const=30):
-        self.task_num=task_num+1+1
-        self.data_num=data_num
-        self.random_state=random_state
-        np.random.seed(random_state)
-        self.epsilon=epsilon
-        self.theta_dim=theta_dim
-        self.real_theta=np.random.randint(-theta_range,theta_range,theta_dim).astype(np.float64)
-        self.datas=[]
-        for _ in range(self.task_num):
-            #タスク毎のthetaを生成
-            if not cov:
-                sigma=cov_const*np.eye(theta_dim)
-            else:
-                sigma=np.random.randn(theta_dim,theta_dim)
-            theta=np.random.multivariate_normal(self.real_theta,sigma)
-            #データを生成
-            if data_num:
-                X=np.random.randn(data_num,theta_dim)
-                y=np.random.multivariate_normal(np.dot(X,theta),epsilon*np.eye(data_num))
-            else:
-                temp=random.randrange(10,1000)
-                X=np.random.randn(temp,theta_dim)
-                y=np.random.multivariate_normal(np.dot(X,theta),epsilon*np.eye(temp))
-            self.datas.append((X,y,theta))
-    def gradient(self,X,y,theta):
-        return 2*np.dot(np.dot(X.T,X),theta)-2*np.dot(X.T,y).reshape(-1,1)
+    def __init__(self,num_task=10,num_data=25,dim=10):
+        self.num_task=num_task
+        self.num_data=num_data
+        data=Data_Generator(task_type="linear",num_samples_per_task=self.num_data,num_task=self.num_task)
+        self.theta_dim=dim
+        self.real_theta=np.random.randn(self.theta_dim)
+        #(num_task,theta_dim), (num_task,2*num_data,theta_dim), (num_task,2*num_data)
+        self.theta,self.inputs,self.outputs=data.generate(self.real_theta)
+
+    def gradient(self,X,y,theta): #gradient of loss function by theta.
+        return 2*np.dot(np.dot(X.T,X),theta)-2*np.dot(X.T,y)
     def meta_gradient(self,X,y,theta,alpha=0.001,beta=0.01,grad_fixed=True,step=1,mini=False,batch_size=10):
-        def pow(m,nth):
-            if nth==1:
-                return m
-            else:
-                return np.dot(m,pow(m,nth-1))
         accum=np.zeros((self.theta_dim,self.theta_dim))
         if mini:
             zipped=np.array(zip(X,y))
@@ -71,33 +50,27 @@ class maml_linear_regression:
                 accum=accum+np.array(self.meta_gradient(X,y,theta,alpha=alpha,beta=beta,grad_fixed=grad_fixed,step=step,mini=mini,batch_size=batch_size)).reshape(-1,1)
         return accum
 
-    def fit(self,random_theta=False,theta_range=50,epochs=100000,early_stopping=100,eta=0.001,datas=False,outputs=False):
-        theta=np.random.randint(-theta_range,theta_range,self.theta_dim).astype(np.float64).reshape(-1,1) #初期値
-        i=0 #early stoppingからの回数
-        if not datas or not outputs:
-            X_val,y_val,theta_v=self.datas[len(self.datas)-2]
-            X_test,y_test,theta_test=self.datas[len(self.datas)-1]
-        else:
-            X_val,
-        theta_val=theta
+    def fit(self,epochs=10000,early_stopping=100,lr=0.001,datas=False,outputs=False):
+        parameters=np.random.randn(self.theta_dim) #初期値
+        early_stopping=0 #early stoppingからの回数
         self.process=[]
         self.test_process=[]
         self.real_process=[]
         best=1000000000
-        for  in range(epochs):
 
-            theta+=self.meta_batch_update(theta)
+        for epoch in range(epochs):
+            parameter+=self.meta_batch_update(parameter)
 
-            theta_val=theta-eta*self.gradient(X_val,y_val,theta)
+            theta_val=parameter-lr*self.gradient(X_val,y_val,parameter)
             ans=np.sum((theta_val-theta_v.reshape(-1,1))**2)
             self.process.append(ans)
-            self.test_process.append(np.sum((theta-eta*self.gradient(X_test,y_test,theta)-theta_test.reshape(-1,1))**2))
+            self.test_process.append(np.sum((parameter-lr*self.gradient(X_test,y_test,parameter)-theta_test.reshape(-1,1))**2))
             self.real_process.append(np.sum((self.real_theta-theta_test)**2))
             if best<ans:
-                i+=1
-                if early_stopping<=i:
+                early_stopping+=1
+                if early_stopping<=early_stopping:
                     break
             else:
-                i=0
+                early_stopping=0
                 best=ans
-        return theta-eta*self.gradient(X_test,y_test,theta)
+        return parameter-lr*self.gradient(X_test,y_test,parameter)

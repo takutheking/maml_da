@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 
 class Predictor(nn.Module):
-    def __init__(self,config=[("linear",(40,1)),("linear",(40,40)),("relu",(40)),("linear",(1,40))]):
+    def __init__(self,config=[("linear",(40,1)),("relu",(40)),("linear",(40,40)),("relu",(40)),("linear",(1,40))]):
         super(Predictor,self).__init__()
         self.config=config
         self.vars=nn.ParameterList()
@@ -29,6 +29,7 @@ class Predictor(nn.Module):
                 idx+=2
             elif name in ["relu"]:
                 x=F.relu(x)
+
         assert idx==len(vars)
         return x
     def parameters(self):
